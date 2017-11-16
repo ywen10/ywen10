@@ -1,7 +1,12 @@
+/*
+ * Author: Yunhan Wen
+ */
+
+
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <string>
+#include <cmath>
 
 using namespace std;
 class Shape {
@@ -18,11 +23,10 @@ public:
     Point(double x,double y, double z):x(x),y(y),z(z){}
     ~Point(){}
     friend Point get_Normal(Point p1,Point p2,Point p3)
-
     {
-        double a = ( (p2.y-p1.y)*(p3.z-p1.z)-(p2.z-p1.z)*(p3.y-p1.y) );
-        double b = ( (p2.z-p1.z)*(p3.x-p1.x)-(p2.x-p1.x)*(p3.z-p1.z) );
-        double c = ( (p2.x-p1.x)*(p3.y-p1.y)-(p2.y-p1.y)*(p3.x-p1.x) );
+        double a = ( (p1.y-p3.y)*(p2.z-p3.z)-(p2.y-p3.y)*(p1.z-p3.z) );
+        double b = ( (p1.z-p3.z)*(p2.x-p3.x)-(p2.z-p3.z)*(p1.x-p3.x) );
+        double c = ( (p1.x-p3.x)*(p2.y-p3.y)-(p2.x-p3.x)*(p1.y-p3.y) );
         return Point(a,b,c);
     }
 };
@@ -31,18 +35,77 @@ class Cylinder : public Shape{
 private:
 	double r, h;
 	int facets;
-    vector<Point *> Points;
-    vector<Point *> normals;
+    vector<Point > points1;
+    vector<Point > normals1;
+    vector<Point > points2;
+    vector<Point > normals2;
+    vector<Point > points3;
+    vector<Point > normals3;
+
+
 public:
 	Cylinder(double x, double y, double z, double r, double h, int facets):Shape(x, y, z),r(r),h(h),facets(facets) {
+           double a=360/facets*3.1415926/180;
+        for (int i = 0; i <facets ; ++i) {
+            Point p0(x+r*cos(a*i),y+r*sin(a*i),z+h/2);
+            Point p1(x+r*cos(a*(i+1)),y+r*sin(a*(i+1)),z+h/2);
+            Point p2(x,y,z+h/2);
+            points1.push_back(p0);
+            points1.push_back(p1);
+            points1.push_back(p2);
+            normals1.push_back(get_Normal(p0,p1,p2));
 
+            Point p3(x+r*cos(a*i),y+r*sin(a*i),z-h/2);
+            Point p4(x,y,z-h/2);
+            Point p5(x+r*cos(a*(i+1)),y+r*sin(a*(i+1)),z-h/2);
+            points2.push_back(p3);
+            points2.push_back(p4);
+            points2.push_back(p5);
+            normals2.push_back(get_Normal(p3,p4,p5));
+
+            points3.push_back(p1);
+            points3.push_back(p0);
+            points3.push_back(p3);
+            points3.push_back(p5);
+            normals3.push_back(get_Normal(p1,p0,p3));
+        }
     }
     void save(string name){
         ofstream file;
         file.open(name,ios_base::app);
-        file<<x<<y<<z;
-    }
 
+        for (int i = 0; i <facets ; ++i) {
+            file<<"facet normal"<<" "<<normals3[i].x<<" "<<normals3[i].y<<" "<<normals3[i].z<<endl;
+            file<<"outer loop"<<endl;
+            file<<"vertex"<<" "<<points3[4*i].x<<" "<<points3[4*i].y<<" "<<points3[4*i].z<<endl;
+            file<<"vertex"<<" "<<points3[4*i+1].x<<" "<<points3[4*i+1].y<<" "<<points3[4*i+1].z<<endl;
+            file<<"vertex"<<" "<<points3[4*i+2].x<<" "<<points3[4*i+2].y<<" "<<points3[4*i+2].z<<endl;
+            file<<"endloop"<<endl;
+            file<<"endfacet"<<endl;
+            file<<"facet normal"<<" "<<normals3[i].x<<" "<<normals3[i].y<<" "<<normals3[i].z<<endl;
+            file<<"outer loop"<<endl;
+            file<<"vertex"<<" "<<points3[4*i+2].x<<" "<<points3[4*i+2].y<<" "<<points3[4*i+2].z<<endl;
+            file<<"vertex"<<" "<<points3[4*i+3].x<<" "<<points3[4*i+3].y<<" "<<points3[4*i+3].z<<endl;
+            file<<"vertex"<<" "<<points3[4*i].x<<" "<<points3[4*i].y<<" "<<points3[4*i].z<<endl;
+            file<<"endloop"<<endl;
+            file<<"endfacet"<<endl;
+            file<<"facet normal"<<" "<<normals1[i].x<<" "<<normals1[i].y<<" "<<normals1[i].z<<endl;
+            file<<"outer loop"<<endl;
+            file<<"vertex"<<" "<<points1[3*i].x<<" "<<points1[3*i].y<<" "<<points1[3*i].z<<endl;
+            file<<"vertex"<<" "<<points1[3*i+1].x<<" "<<points1[3*i+1].y<<" "<<points1[3*i+1].z<<endl;
+            file<<"vertex"<<" "<<points1[3*i+2].x<<" "<<points1[3*i+2].y<<" "<<points1[3*i+2].z<<endl;
+            file<<"endloop"<<endl;
+            file<<"endfacet"<<endl;
+            file<<"facet normal"<<" "<<normals2[i].x<<" "<<normals2[i].y<<" "<<normals2[i].z<<endl;
+            file<<"outer loop"<<endl;
+            file<<"vertex"<<" "<<points2[3*i].x<<" "<<points2[3*i].y<<" "<<points2[3*i].z<<endl;
+            file<<"vertex"<<" "<<points2[3*i+1].x<<" "<<points2[3*i+1].y<<" "<<points2[3*i+1].z<<endl;
+            file<<"vertex"<<" "<<points2[3*i+2].x<<" "<<points2[3*i+2].y<<" "<<points2[3*i+2].z<<endl;
+            file<<"endloop"<<endl;
+            file<<"endfacet"<<endl;
+        }
+
+    }
 };
 
 class Cube: public Shape {
@@ -119,7 +182,7 @@ public:
     void save(string name){
         ofstream file;
         file.open(name,ios_base::app);
-        file<<"solid OpenSCAD_Cube"<<endl;
+
         for (int i = 0; i <6 ; ++i) {
             file<<"facet normal"<<" "<<normals[i].x<<" "<<normals[i].y<<" "<<normals[i].z<<endl;
             file<<"outer loop"<<endl;
@@ -136,12 +199,7 @@ public:
             file<<"endloop"<<endl;
             file<<"endfacet"<<endl;
         }
-
-        file<<"endsolid OpenSCAD_Cube"<<endl;
     }
-
-
-
 };
 
 class CAD {
@@ -155,9 +213,12 @@ public:
 
     void write(string name) {
         ofstream file(name);
+        file.open(name,ios_base::app);
+        file<<"solid OpenSCAD_model"<<endl;
         for (auto s : shapes) {
             s->save(name);
         }
+        file<<"endsolid OpenSCAD_model"<<endl;
     }
 };
 
